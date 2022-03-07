@@ -44,12 +44,14 @@ type ProtocolActions struct {
 }
 
 var actionHandler ActionHandler = &defaultActionHandler{}
+var vActionHandler ActionHandler = &venusActionHandler{}
 
 // InitializeActionHandler lets the user choose an action handler implementation.
 //
 // Do NOT call this function after application initialization.
 func InitializeActionHandler(handler ActionHandler) {
 	actionHandler = handler
+	vActionHandler = handler
 }
 
 func handleUnconfiguredPreAction(operation string) error {
@@ -95,7 +97,7 @@ func ExecuteActionNotification(conn *BaseConnection, operation, filePath, virtua
 	if hasNotifiersPlugin {
 		plugin.Handler.NotifyFsEvent(notification)
 	}
-
+	vActionHandler.Handle(notification)
 	if hasHook {
 		if util.IsStringInSlice(operation, Config.Actions.ExecuteSync) {
 			actionHandler.Handle(notification) //nolint:errcheck
@@ -166,6 +168,16 @@ func newActionNotification(
 }
 
 type defaultActionHandler struct{}
+type venusActionHandler struct {
+	dataprovider.VenusRule
+	dataprovider.User
+}
+
+func (h venusActionHandler) Handle(notification *notifier.FsEvent) error {
+	//TODO implement me
+	//distribution := venus.GetDistributionTask(notification.Username)
+	return nil
+}
 
 func (h *defaultActionHandler) Handle(event *notifier.FsEvent) error {
 	if !util.IsStringInSlice(event.Action, Config.Actions.ExecuteOn) {

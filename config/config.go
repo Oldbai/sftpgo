@@ -24,6 +24,7 @@ import (
 	"github.com/drakkan/sftpgo/v2/smtp"
 	"github.com/drakkan/sftpgo/v2/telemetry"
 	"github.com/drakkan/sftpgo/v2/util"
+	"github.com/drakkan/sftpgo/v2/venus"
 	"github.com/drakkan/sftpgo/v2/version"
 	"github.com/drakkan/sftpgo/v2/webdavd"
 )
@@ -113,6 +114,7 @@ type globalConfig struct {
 	TelemetryConfig telemetry.Conf        `json:"telemetry" mapstructure:"telemetry"`
 	PluginsConfig   []plugin.Config       `json:"plugins" mapstructure:"plugins"`
 	SMTPConfig      smtp.Config           `json:"smtp" mapstructure:"smtp"`
+	VenusConfig     venus.Config          `json:"venus" mapstructure:"venus"`
 }
 
 func init() {
@@ -336,6 +338,9 @@ func Init() {
 			Domain:        "",
 			TemplatesPath: "templates",
 		},
+		VenusConfig: venus.Config{
+			Enable: false,
+		},
 	}
 
 	viper.SetEnvPrefix(configEnvPrefix)
@@ -452,6 +457,11 @@ func GetSMTPConfig() smtp.Config {
 	return globalConf.SMTPConfig
 }
 
+// GetVenusConfig return the venus configuration
+func GetVenusConfig() venus.Config {
+	return globalConf.VenusConfig
+}
+
 // HasServicesToStart returns true if the config defines at least a service to start.
 // Supported services are SFTP, FTP and WebDAV
 func HasServicesToStart() bool {
@@ -531,6 +541,7 @@ func LoadConfig(configDir, configFile string) error {
 	}
 	// viper only supports slice of strings from env vars, so we use our custom method
 	loadBindingsFromEnv()
+	//不受控制的参数进行重置，防止用户填写错误
 	resetInvalidConfigs()
 	logger.Debug(logSender, "", "config file used: '%#v', config loaded: %+v", viper.ConfigFileUsed(), getRedactedGlobalConf())
 	return nil
@@ -1349,6 +1360,7 @@ func setViperDefaults() {
 	viper.SetDefault("smtp.encryption", globalConf.SMTPConfig.Encryption)
 	viper.SetDefault("smtp.domain", globalConf.SMTPConfig.Domain)
 	viper.SetDefault("smtp.templates_path", globalConf.SMTPConfig.TemplatesPath)
+	viper.SetDefault("venus.enable", globalConf.VenusConfig.Enable)
 }
 
 func lookupBoolFromEnv(envName string) (bool, bool) {

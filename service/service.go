@@ -151,6 +151,13 @@ func (s *Service) Start() error {
 		return err
 	}
 
+	venusConfig := config.GetVenusConfig()
+	err = venusConfig.Initialize(s.ConfigDir)
+	if err != nil {
+		logger.Error(logSender, "", "error initializing venus: %v", err)
+		logger.ErrorToConsole("error initializing venus: %v", err)
+	}
+
 	s.startServices()
 	go common.Config.ExecuteStartupHook() //nolint:errcheck
 
