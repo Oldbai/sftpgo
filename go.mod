@@ -32,6 +32,7 @@ require (
 	github.com/mhale/smtpd v0.8.0
 	github.com/minio/sio v0.3.0
 	github.com/otiai10/copy v1.7.0
+	github.com/panjf2000/ants/v2 v2.4.8
 	github.com/pires/go-proxyproto v0.6.1
 	github.com/pkg/sftp v1.13.5-0.20211217081921-1849af66afae
 	github.com/pquerna/otp v1.3.0
