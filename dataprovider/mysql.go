@@ -364,6 +364,10 @@ func (p *MySQLProvider) reloadConfig() error {
 	return nil
 }
 
+func (p *MySQLProvider) getRulesByOsnUserName(username string) ([]VenusRule, error) {
+	return sqlCommonGetRulesByOsnUserName(username, p.dbHandle)
+}
+
 // initializeDatabase creates the initial database structure
 func (p *MySQLProvider) initializeDatabase() error {
 	dbVersion, err := sqlCommonGetDatabaseVersion(p.dbHandle, false)

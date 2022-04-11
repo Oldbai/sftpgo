@@ -1405,6 +1405,10 @@ func (p *BoltProvider) reloadConfig() error {
 	return nil
 }
 
+func (p *BoltProvider) getRulesByOsnUserName(username string) ([]VenusRule, error) {
+	return nil, nil
+}
+
 // initializeDatabase does nothing, no initilization is needed for bolt provider
 func (p *BoltProvider) initializeDatabase() error {
 	return ErrNoInitRequired

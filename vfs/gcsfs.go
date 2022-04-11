@@ -832,3 +832,7 @@ func (*GCSFs) GetAvailableDiskSize(dirName string) (*sftp.StatVFS, error) {
 func (fs *GCSFs) getStorageID() string {
 	return fmt.Sprintf("gs://%v", fs.config.Bucket)
 }
+
+func (fs *GCSFs) Copy(source, target string) error {
+	return nil
+}

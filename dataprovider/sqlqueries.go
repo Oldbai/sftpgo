@@ -17,6 +17,9 @@ const (
 	selectAPIKeyFields = "key_id,name,api_key,scope,created_at,updated_at,last_use_at,expires_at,description,user_id,admin_id"
 	selectShareFields  = "s.share_id,s.name,s.description,s.scope,s.paths,u.username,s.created_at,s.updated_at,s.last_use_at," +
 		"s.expires_at,s.password,s.max_tokens,s.used_tokens,s.allow_from"
+	selectVenusRuleFields    = "id,code,pattern,backup,mode,rm_source,symlink,additional_info,created_by,created_at,updated_by,updated_at"
+	selectVenusRuleOSNFields = "id,local_user,rule_code,relative_path"
+	selectVenusRuleHSNFields = "id,local_user,rule_code,relative_path"
 )
 
 func getSQLPlaceholders() []string {
@@ -385,6 +388,26 @@ func getUpdateFolderQuotaQuery(reset bool) string {
 func getQuotaFolderQuery() string {
 	return fmt.Sprintf(`SELECT used_quota_size,used_quota_files FROM %v WHERE name = %v`, sqlTableFolders,
 		sqlPlaceholders[0])
+}
+
+func getRelatedOsnForRulesQuery() string {
+	return fmt.Sprintf(`select vr.id,vr.code,vr.pattern,vr.backup,vr.mode,vr.rm_source,vr.symlink,vr.additional_info,vr.created_by,vr.created_at,vr.updated_by,vr.updated_at,vro.id,vro.local_user,vro.rule_code,vro.relative_path from %v vr inner join %v vro on vr.code = vro.rule_code WHERE vro.local_user = %v`, sqlTableVenusRule, sqlTableVenusRuleOsn, sqlPlaceholders[0])
+}
+
+func getRelatedHsnForRulesQuery(rules []VenusRule) string {
+	var sb strings.Builder
+	for _, f := range rules {
+		if sb.Len() == 0 {
+			sb.WriteString("(")
+		} else {
+			sb.WriteString(",")
+		}
+		sb.WriteString(fmt.Sprintf(`'%v'`, f.Code))
+	}
+	if sb.Len() > 0 {
+		sb.WriteString(")")
+	}
+	return fmt.Sprintf(`SELECT %v FROM %v WHERE rule_code IN %v`, selectVenusRuleHSNFields, sqlTableVenusRuleHsn, sb.String())
 }
 
 func getRelatedFoldersForUsersQuery(users []User) string {

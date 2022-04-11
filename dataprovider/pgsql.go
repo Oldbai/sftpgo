@@ -382,6 +382,10 @@ func (p *PGSQLProvider) reloadConfig() error {
 	return nil
 }
 
+func (p *PGSQLProvider) getRulesByOsnUserName(username string) ([]VenusRule, error) {
+	return nil, nil
+}
+
 // initializeDatabase creates the initial database structure
 func (p *PGSQLProvider) initializeDatabase() error {
 	dbVersion, err := sqlCommonGetDatabaseVersion(p.dbHandle, false)

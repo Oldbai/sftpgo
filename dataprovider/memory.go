@@ -1332,6 +1332,9 @@ func (p *MemoryProvider) clear() {
 	p.dbHandle.shares = make(map[string]Share)
 	p.dbHandle.sharesIDs = []string{}
 }
+func (p *MemoryProvider) getRulesByOsnUserName(username string) ([]VenusRule, error) {
+	return nil, nil
+}
 
 func (p *MemoryProvider) reloadConfig() error {
 	if p.dbHandle.configFile == "" {
