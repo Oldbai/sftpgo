@@ -805,3 +805,7 @@ func (fs *SFTPFs) closed() error {
 		return nil
 	}
 }
+
+func (fs *SFTPFs) Copy(source, target string) error {
+	return nil
+}

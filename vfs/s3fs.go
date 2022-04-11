@@ -813,3 +813,7 @@ func pathEscape(in string) string {
 	u.Path = in
 	return strings.ReplaceAll(u.String(), "+", "%2B")
 }
+
+func (fs *S3Fs) Copy(source, target string) error {
+	return nil
+}

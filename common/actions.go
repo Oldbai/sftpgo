@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/drakkan/sftpgo/v2/venus"
 	"net/http"
 	"net/url"
 	"os"
@@ -97,7 +98,6 @@ func ExecuteActionNotification(conn *BaseConnection, operation, filePath, virtua
 	if hasNotifiersPlugin {
 		plugin.Handler.NotifyFsEvent(notification)
 	}
-	vActionHandler.Handle(notification)
 	if hasHook {
 		if util.IsStringInSlice(operation, Config.Actions.ExecuteSync) {
 			actionHandler.Handle(notification) //nolint:errcheck
@@ -105,7 +105,11 @@ func ExecuteActionNotification(conn *BaseConnection, operation, filePath, virtua
 		}
 
 		go actionHandler.Handle(notification) //nolint:errcheck
+		if venus.IsEnable() {
+			go vActionHandler.Handle(notification)
+		}
 	}
+
 }
 
 // ActionHandler handles a notification for a Protocol Action.
@@ -168,14 +172,13 @@ func newActionNotification(
 }
 
 type defaultActionHandler struct{}
-type venusActionHandler struct {
-	dataprovider.VenusRule
-	dataprovider.User
-}
+type venusActionHandler struct{}
 
 func (h venusActionHandler) Handle(notification *notifier.FsEvent) error {
-	//TODO implement me
-	//distribution := venus.GetDistributionTask(notification.Username)
+	err := venus.AcceptTask(notification)
+	if err != nil {
+		return fmt.Errorf("流转任务报错: %v", err)
+	}
 	return nil
 }
 

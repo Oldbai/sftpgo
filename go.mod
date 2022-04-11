@@ -7,6 +7,7 @@ require (
 	github.com/Azure/azure-storage-blob-go v0.14.0
 	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962
 	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387
+	github.com/aliyun/aliyun-oss-go-sdk v2.2.1+incompatible
 	github.com/aws/aws-sdk-go v1.42.47
 	github.com/cockroachdb/cockroach-go/v2 v2.2.6
 	github.com/eikenb/pipeat v0.0.0-20210603033007-44fc3ffce52b
@@ -66,6 +67,7 @@ require (
 	cloud.google.com/go/compute v1.2.0 // indirect
 	cloud.google.com/go/iam v0.1.1 // indirect
 	github.com/Azure/azure-pipeline-go v0.2.3 // indirect
+	github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/boombuler/barcode v1.0.1 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
@@ -141,4 +143,5 @@ replace (
 	github.com/jlaffaye/ftp => github.com/drakkan/ftp v0.0.0-20201114075148-9b9adce499a9
 	golang.org/x/crypto => github.com/drakkan/crypto v0.0.0-20220203171754-7c88c47fe4cc
 	golang.org/x/net => github.com/drakkan/net v0.0.0-20220203171957-88bffbb14d53
+//github.com/sftpgo/sdk => github.com/oldbai/sdk v0.1.1-0.20220308073542-37ab13e8983b
 )

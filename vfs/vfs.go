@@ -99,6 +99,8 @@ type Fs interface {
 	GetAvailableDiskSize(dirName string) (*sftp.StatVFS, error)
 	CheckMetadata() error
 	Close() error
+	// Copy 增加对单个文件的操作，主要用于跨存储操作
+	Copy(source, target string) error
 }
 
 // fsMetadataChecker is a Fs that implements the getFileNamesInPrefix method.
@@ -760,4 +762,70 @@ func fsMetadataCheck(fs fsMetadataChecker, storageID, keyPrefix string) error {
 
 func fsLog(fs Fs, level logger.LogLevel, format string, v ...interface{}) {
 	logger.Log(level, fs.Name(), fs.ConnectionID(), format, v...)
+}
+
+// AliOSSFsConfig 阿里OSS
+type AliOSSFsConfig struct {
+	sdk.BaseS3FsConfig
+	AccessSecret          *kms.Secret `json:"access_secret,omitempty"`
+	AccessSecretPlaintext string
+}
+
+func (c *AliOSSFsConfig) Validate() error {
+	if c.AccessSecret == nil {
+		c.AccessSecret = kms.NewEmptySecret()
+	}
+	if c.Bucket == "" {
+		return errors.New("bucket cannot be empty")
+	}
+	if c.Region == "" {
+		return errors.New("region cannot be empty")
+	}
+	if err := c.checkCredentials(); err != nil {
+		return err
+	}
+	if c.KeyPrefix != "" {
+		if strings.HasPrefix(c.KeyPrefix, "/") {
+			return errors.New("key_prefix cannot start with /")
+		}
+		c.KeyPrefix = path.Clean(c.KeyPrefix)
+		if !strings.HasSuffix(c.KeyPrefix, "/") {
+			c.KeyPrefix += "/"
+		}
+	}
+	c.StorageClass = strings.TrimSpace(c.StorageClass)
+	c.ACL = strings.TrimSpace(c.ACL)
+	return c.checkPartSizeAndConcurrency()
+}
+
+func (c *AliOSSFsConfig) checkPartSizeAndConcurrency() error {
+	if c.UploadPartSize != 0 && (c.UploadPartSize < 5 || c.UploadPartSize > 5000) {
+		return errors.New("upload_part_size cannot be != 0, lower than 5 (MB) or greater than 5000 (MB)")
+	}
+	if c.UploadConcurrency < 0 || c.UploadConcurrency > 64 {
+		return fmt.Errorf("invalid upload concurrency: %v", c.UploadConcurrency)
+	}
+	if c.DownloadPartSize != 0 && (c.DownloadPartSize < 5 || c.DownloadPartSize > 5000) {
+		return errors.New("download_part_size cannot be != 0, lower than 5 (MB) or greater than 5000 (MB)")
+	}
+	if c.DownloadConcurrency < 0 || c.DownloadConcurrency > 64 {
+		return fmt.Errorf("invalid download concurrency: %v", c.DownloadConcurrency)
+	}
+	return nil
+}
+
+func (c *AliOSSFsConfig) checkCredentials() error {
+	if c.AccessKey == "" && !c.AccessSecret.IsEmpty() {
+		return errors.New("access_key cannot be empty with access_secret not empty")
+	}
+	if c.AccessSecret.IsEmpty() && c.AccessKey != "" {
+		return errors.New("access_secret cannot be empty with access_key not empty")
+	}
+	if c.AccessSecret.IsEncrypted() && !c.AccessSecret.IsValid() {
+		return errors.New("invalid encrypted access_secret")
+	}
+	if !c.AccessSecret.IsEmpty() && !c.AccessSecret.IsValidInput() {
+		return errors.New("invalid access_secret")
+	}
+	return nil
 }

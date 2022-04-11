@@ -363,6 +363,10 @@ func (p *SQLiteProvider) reloadConfig() error {
 	return nil
 }
 
+func (p *SQLiteProvider) getRulesByOsnUserName(username string) ([]VenusRule, error) {
+	return nil, nil
+}
+
 // initializeDatabase creates the initial database structure
 func (p *SQLiteProvider) initializeDatabase() error {
 	dbVersion, err := sqlCommonGetDatabaseVersion(p.dbHandle, false)

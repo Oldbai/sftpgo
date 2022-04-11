@@ -238,3 +238,23 @@ func (v *VirtualFolder) GetACopy() VirtualFolder {
 		QuotaFiles:        v.QuotaFiles,
 	}
 }
+
+// GetFilesystemByProvider 与其他系统交互时候获取该本地用户的文件系统
+func (v *VirtualFolder) GetFilesystemByProvider() (Fs, error) {
+	switch v.FsConfig.Provider {
+	case sdk.S3FilesystemProvider:
+		return NewS3Fs("", v.MappedPath, v.VirtualPath, v.FsConfig.S3Config)
+	case sdk.GCSFilesystemProvider:
+		config := v.FsConfig.GCSConfig
+		config.CredentialFile = v.GetGCSCredentialsFilePath()
+		return NewGCSFs("", v.MappedPath, v.VirtualPath, config)
+	case sdk.AzureBlobFilesystemProvider:
+		return NewAzBlobFs("", v.MappedPath, v.VirtualPath, v.FsConfig.AzBlobConfig)
+	case sdk.CryptedFilesystemProvider:
+		return NewCryptFs("", v.MappedPath, v.VirtualPath, v.FsConfig.CryptConfig)
+	case sdk.SFTPFilesystemProvider:
+		return NewSFTPFs("", v.VirtualPath, v.MappedPath, []string{}, v.FsConfig.SFTPConfig)
+	default:
+		return NewOsFs("", v.MappedPath, v.VirtualPath), nil
+	}
+}

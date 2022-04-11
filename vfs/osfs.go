@@ -462,3 +462,7 @@ func (*OsFs) Close() error {
 func (*OsFs) GetAvailableDiskSize(dirName string) (*sftp.StatVFS, error) {
 	return getStatFS(dirName)
 }
+
+func (fs *OsFs) Copy(source, target string) error {
+	return nil
+}

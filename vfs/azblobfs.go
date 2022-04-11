@@ -1060,3 +1060,7 @@ func (b *bufferAllocator) free() {
 	b.available = nil
 	b.finalized = true
 }
+
+func (fs *AzureBlobFs) Copy(source, target string) error {
+	return nil
+}

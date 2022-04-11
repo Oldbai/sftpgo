@@ -970,6 +970,97 @@ func sqlCommonGetUsers(limit int, offset int, order string, dbHandle sqlQuerier)
 	return getUsersWithVirtualFolders(ctx, users, dbHandle)
 }
 
+func sqlCommonGetRulesByOsnUserName(username string, dbHandle *sql.DB) ([]VenusRule, error) {
+	rules := make([]VenusRule, 0, 10)
+	ctx, cancel := context.WithTimeout(context.Background(), longSQLQueryTimeout)
+	defer cancel()
+
+	q := getRelatedOsnForRulesQuery()
+	stmt, err := dbHandle.PrepareContext(ctx, q)
+	if err != nil {
+		providerLog(logger.LevelError, "error preparing database query %#v: %v", q, err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx, username)
+	if err != nil {
+		return rules, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var osn VenusRuleOSN
+		var rule VenusRule
+		var additionalInfo sql.NullString
+		err = rows.Scan(&rule.ID,
+			&rule.Code,
+			&rule.Pattern,
+			&rule.Backup,
+			&rule.Mode,
+			&rule.RmSource,
+			&rule.Symlink,
+			&additionalInfo,
+			&rule.CreatedBy,
+			&rule.CreatedAt,
+			&rule.UpdatedBy,
+			&rule.UpdatedAt,
+			&osn.ID,
+			&osn.LocalUser,
+			&osn.RuleCode,
+			&osn.RelativePath)
+		rule.AdditionalInfo = additionalInfo.String
+		if err != nil {
+			return rules, err
+		}
+		rule.OSN = &osn
+		rules = append(rules, rule)
+	}
+	err = rows.Err()
+	if err != nil {
+		return rules, err
+	}
+	return getRulesWithHSN(ctx, rules, dbHandle)
+}
+
+func getRulesWithHSN(ctx context.Context, rules []VenusRule, dbHandle sqlQuerier) ([]VenusRule, error) {
+	if len(rules) == 0 {
+		return rules, fmt.Errorf("规则为空")
+	}
+
+	q := getRelatedHsnForRulesQuery(rules)
+	stmt, err := dbHandle.PrepareContext(ctx, q)
+	if err != nil {
+		providerLog(logger.LevelError, "error preparing database query %#v: %v", q, err)
+		return nil, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.QueryContext(ctx)
+	if err != nil {
+		return rules, err
+	}
+	defer rows.Close()
+
+	ruleHsns := make(map[string][]VenusRuleHSN)
+	for rows.Next() {
+		var hsn VenusRuleHSN
+		err := rows.Scan(&hsn.ID,
+			&hsn.LocalUser,
+			&hsn.RuleCode,
+			&hsn.RelativePath)
+		if err != nil {
+			return rules, err
+		}
+		ruleHsns[hsn.RuleCode] = append(ruleHsns[hsn.RuleCode], hsn)
+	}
+	for idx := range rules {
+		ref := &rules[idx]
+		ref.HSN = ruleHsns[ref.Code]
+	}
+	return rules, nil
+}
+
 func sqlCommonGetDefenderHosts(from int64, limit int, dbHandle sqlQuerier) ([]*DefenderEntry, error) {
 	hosts := make([]*DefenderEntry, 0, 100)
 

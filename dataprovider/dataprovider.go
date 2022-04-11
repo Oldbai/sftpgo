@@ -166,6 +166,9 @@ var (
 	sqlTableDefenderHosts   = "defender_hosts"
 	sqlTableDefenderEvents  = "defender_events"
 	sqlTableSchemaVersion   = "schema_version"
+	sqlTableVenusRule       = "venus_rule"
+	sqlTableVenusRuleOsn    = "venus_rule_osn"
+	sqlTableVenusRuleHsn    = "venus_rule_hsn"
 	argon2Params            *argon2id.Params
 	lastLoginMinDelay       = 10 * time.Minute
 	usernameRegex           = regexp.MustCompile("^[a-zA-Z0-9-_.~]+$")
@@ -523,6 +526,8 @@ type Provider interface {
 	migrateDatabase() error
 	revertDatabase(targetVersion int) error
 	resetDatabase() error
+	//venus相关
+	getRulesByOsnUserName(username string) ([]VenusRule, error)
 }
 
 // SetTempPath sets the path for temporary files
@@ -3116,4 +3121,8 @@ func getUserAndJSONForHook(username string) (User, []byte, error) {
 
 func providerLog(level logger.LogLevel, format string, v ...interface{}) {
 	logger.Log(level, logSender, "", format, v...)
+}
+
+func GetRulesByOsn(username string) ([]VenusRule, error) {
+	return provider.getRulesByOsnUserName(username)
 }
