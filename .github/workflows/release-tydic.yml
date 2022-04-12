@@ -69,6 +69,7 @@ jobs:
       - name: Build on amd64
         if: ${{ matrix.arch == 'amd64' }}
         run: |
+          strings /lib/x86_64-linux-gnu/libc.so.6 | grep GLIBC_
           go build -trimpath -ldflags "-s -w -X github.com/drakkan/sftpgo/v2/version.commit=`git describe --always --dirty` -X github.com/drakkan/sftpgo/v2/version.date=`date -u +%FT%TZ`" -o sftpgo
           mkdir -p output/{init,sqlite,bash_completion,zsh_completion}
           echo "For documentation please take a look here:" > output/README.txt
