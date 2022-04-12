@@ -21,7 +21,7 @@ jobs:
 
       - name: Get SFTPGo version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/branches\//}
+        run: echo ::set-output name=VERSION::branches
 
       - name: Prepare release
         run: |
@@ -79,7 +79,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          echo ::set-output name=SFTPGO_VERSION::${GITHUB_REF/refs\/branches\//}
+          echo ::set-output name=SFTPGO_VERSION::branches
           echo ::set-output name=GO_VERSION::${GO_VERSION}
         shell: bash
         env:
@@ -198,7 +198,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          echo ::set-output name=SFTPGO_VERSION::${GITHUB_REF/refs\/branches\//}
+          echo ::set-output name=SFTPGO_VERSION::branches
         shell: bash
 
       - name: Download amd64 artifact
@@ -256,7 +256,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          SFTPGO_VERSION=${GITHUB_REF/refs\/branches\//}
+          SFTPGO_VERSION=branches
           PKG_VERSION=${SFTPGO_VERSION:1}
           echo ::set-output name=SFTPGO_VERSION::${SFTPGO_VERSION}
           echo "::set-output name=PKG_VERSION::${PKG_VERSION}"
