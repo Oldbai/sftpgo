@@ -104,6 +104,7 @@ jobs:
         id: build_linux_pkgs
         run: |
           export NFPM_ARCH=${{ matrix.go-arch }}
+          export SFTPGO_VERSION=${SFTPGO_VERSION:1}
           cd pkgs
           ./build.sh
           PKG_VERSION=${SFTPGO_VERSION:1}
