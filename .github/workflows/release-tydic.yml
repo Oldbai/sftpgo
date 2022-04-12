@@ -2,7 +2,8 @@ name: Release-Tydic
 
 on:
   push:
-    branches: [2.2.2-tydic]
+    branches: [v2.2.2-tydic]
+  pull_request:
 
 env:
   GO_VERSION: 1.17.6
