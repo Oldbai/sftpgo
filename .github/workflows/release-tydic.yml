@@ -21,7 +21,7 @@ jobs:
 
       - name: Get SFTPGo version
         id: get_version
-        run: echo ::set-output name=VERSION::branches
+        run: echo ::set-output name=VERSION::${branches}
 
       - name: Prepare release
         run: |
@@ -49,24 +49,6 @@ jobs:
             deb-arch: amd64
             rpm-arch: x86_64
             tar-arch: x86_64
-          - arch: aarch64
-            distro: ubuntu18.04
-            go-arch: arm64
-            deb-arch: arm64
-            rpm-arch: aarch64
-            tar-arch: arm64
-          - arch: ppc64le
-            distro: ubuntu18.04
-            go-arch: ppc64le
-            deb-arch: ppc64el
-            rpm-arch: ppc64le
-            tar-arch: ppc64le
-          - arch: armv7
-            distro: ubuntu18.04
-            go-arch: arm7
-            deb-arch: armhf
-            rpm-arch: armv7hl
-            tar-arch: armv7
 
     steps:
       - uses: actions/checkout@v2
@@ -79,7 +61,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          echo ::set-output name=SFTPGO_VERSION::branches
+          echo ::set-output name=SFTPGO_VERSION::${branches}
           echo ::set-output name=GO_VERSION::${GO_VERSION}
         shell: bash
         env:
@@ -112,51 +94,6 @@ jobs:
         env:
           SFTPGO_VERSION: ${{ steps.get_version.outputs.SFTPGO_VERSION }}
 
-      - uses: uraimo/run-on-arch-action@v2.1.1
-        if: ${{ matrix.arch != 'amd64' }}
-        name: Build for ${{ matrix.arch }}
-        id: build
-        with:
-          arch: ${{ matrix.arch }}
-          distro: ${{ matrix.distro }}
-          setup: |
-            mkdir -p "${PWD}/output"
-          dockerRunArgs: |
-            --volume "${PWD}/output:/output"
-          shell: /bin/bash
-          install: |
-            apt-get update -q -y
-            apt-get install -q -y curl gcc git xz-utils
-            GO_DOWNLOAD_ARCH=${{ matrix.go-arch }}
-            if [ ${{ matrix.arch}} == 'armv7' ]
-            then
-              GO_DOWNLOAD_ARCH=armv6l
-            fi
-            curl --retry 5 --retry-delay 2 --connect-timeout 10 -o go.tar.gz -L https://go.dev/dl/go${{ steps.get_version.outputs.GO_VERSION }}.linux-${GO_DOWNLOAD_ARCH}.tar.gz
-            tar -C /usr/local -xzf go.tar.gz
-          run: |
-            export PATH=$PATH:/usr/local/go/bin
-            go build -trimpath -ldflags "-s -w -X github.com/drakkan/sftpgo/v2/version.commit=`git describe --always --dirty` -X github.com/drakkan/sftpgo/v2/version.date=`date -u +%FT%TZ`" -o sftpgo
-            mkdir -p output/{init,sqlite,bash_completion,zsh_completion}
-            echo "For documentation please take a look here:" > output/README.txt
-            echo "" >> output/README.txt
-            echo "https://github.com/drakkan/sftpgo/blob/${{ steps.get_version.outputs.SFTPGO_VERSION }}/README.md" >> output/README.txt
-            cp LICENSE output/
-            cp sftpgo.json output/
-            cp -r templates output/
-            cp -r static output/
-            cp -r openapi output/
-            cp init/sftpgo.service output/init/
-            ./sftpgo initprovider
-            ./sftpgo gen completion bash > output/bash_completion/sftpgo
-            ./sftpgo gen completion zsh > output/zsh_completion/_sftpgo
-            ./sftpgo gen man -d output/man/man1
-            gzip output/man/man1/*
-            cp sftpgo output/
-            cp sftpgo.db output/sqlite/
-            cd output
-            tar cJvf sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_${{ matrix.tar-arch }}.tar.xz *
-            cd ..
       - name: Upload build artifact for ${{ matrix.arch }}
         uses: actions/upload-artifact@v2
         with:
@@ -189,66 +126,9 @@ jobs:
           path: ./pkgs/dist/rpm/sftpgo-${{ steps.build_linux_pkgs.outputs.pkg-version }}-1.${{ matrix.rpm-arch}}.rpm
           retention-days: 1
 
-  prepare-linux-bundle:
-    name: Prepare Linux bundle
-    needs: prepare-linux
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Get versions
-        id: get_version
-        run: |
-          echo ::set-output name=SFTPGO_VERSION::branches
-        shell: bash
-
-      - name: Download amd64 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_x86_64.tar.xz
-
-      - name: Download arm64 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_arm64.tar.xz
-
-      - name: Download ppc64le artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_ppc64le.tar.xz
-
-      - name: Download armv7 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_armv7.tar.xz
-
-      - name: Build bundle
-        shell: bash
-        run: |
-          mkdir -p bundle/{arm64,ppc64le,armv7}
-          cd bundle
-          tar xvf ../sftpgo_${SFTPGO_VERSION}_linux_x86_64.tar.xz
-          cd arm64
-          tar xvf ../../sftpgo_${SFTPGO_VERSION}_linux_arm64.tar.xz sftpgo
-          cd ../ppc64le
-          tar xvf ../../sftpgo_${SFTPGO_VERSION}_linux_ppc64le.tar.xz sftpgo
-          cd ../armv7
-          tar xvf ../../sftpgo_${SFTPGO_VERSION}_linux_armv7.tar.xz sftpgo
-          cd ..
-          tar cJvf sftpgo_${SFTPGO_VERSION}_linux_bundle.tar.xz *
-          cd ..
-        env:
-          SFTPGO_VERSION: ${{ steps.get_version.outputs.SFTPGO_VERSION }}
-
-      - name: Upload Linux bundle
-        uses: actions/upload-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_bundle.tar.xz
-          path: ./bundle/sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_bundle.tar.xz
-          retention-days: 1
-
   create-release:
     name: Release
-    needs: [prepare-linux-bundle, prepare-sources-with-deps]
+    needs: [prepare-sources-with-deps]
     runs-on: ubuntu-latest
 
     steps:
@@ -256,7 +136,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          SFTPGO_VERSION=branches
+          SFTPGO_VERSION=${branches}
           PKG_VERSION=${SFTPGO_VERSION:1}
           echo ::set-output name=SFTPGO_VERSION::${SFTPGO_VERSION}
           echo "::set-output name=PKG_VERSION::${PKG_VERSION}"
@@ -267,65 +147,15 @@ jobs:
         with:
           name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_x86_64.tar.xz
 
-      - name: Download arm64 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_arm64.tar.xz
-
-      - name: Download ppc64le artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_ppc64le.tar.xz
-
-      - name: Download armv7 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_armv7.tar.xz
-
-      - name: Download Linux bundle artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.SFTPGO_VERSION }}_linux_bundle.tar.xz
-
       - name: Download Deb amd64 artifact
         uses: actions/download-artifact@v2
         with:
           name: sftpgo_${{ steps.get_version.outputs.PKG_VERSION }}-1_amd64.deb
 
-      - name: Download Deb arm64 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.PKG_VERSION }}-1_arm64.deb
-
-      - name: Download Deb ppc64le artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.PKG_VERSION }}-1_ppc64el.deb
-
-      - name: Download Deb armv7 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo_${{ steps.get_version.outputs.PKG_VERSION }}-1_armhf.deb
-
       - name: Download RPM x86_64 artifact
         uses: actions/download-artifact@v2
         with:
           name: sftpgo-${{ steps.get_version.outputs.PKG_VERSION }}-1.x86_64.rpm
-
-      - name: Download RPM aarch64 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo-${{ steps.get_version.outputs.PKG_VERSION }}-1.aarch64.rpm
-
-      - name: Download RPM ppc64le artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo-${{ steps.get_version.outputs.PKG_VERSION }}-1.ppc64le.rpm
-
-      - name: Download RPM armv7 artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: sftpgo-${{ steps.get_version.outputs.PKG_VERSION }}-1.armv7hl.rpm
 
       - name: Download source with deps artifact
         uses: actions/download-artifact@v2
