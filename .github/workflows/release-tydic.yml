@@ -2,7 +2,7 @@ name: Release-Tydic
 
 on:
   push:
-    branches: [ v2.2.2_tydic ]
+    branches: [v2.2.2_tydic]
   pull_request:
 
 env:
@@ -128,7 +128,7 @@ jobs:
 
   create-release:
     name: Release
-    needs: [ prepare-linux-bundle, prepare-sources-with-deps ]
+    needs: [prepare-linux, prepare-sources-with-deps]
     runs-on: ubuntu-latest
 
     steps:
