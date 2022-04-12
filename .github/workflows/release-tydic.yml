@@ -2,8 +2,7 @@ name: Release-Tydic
 
 on:
   push:
-    branches: [v2.2.2_tydic]
-  pull_request:
+    tags: 'v2.2.2.*'
 
 env:
   GO_VERSION: 1.17.6
@@ -21,7 +20,7 @@ jobs:
 
       - name: Get SFTPGo version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/*/}
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
       - name: Prepare release
         run: |
@@ -61,7 +60,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          echo ::set-output name=SFTPGO_VERSION::${GITHUB_REF#refs/*/}
+          echo ::set-output name=SFTPGO_VERSION::${GITHUB_REF/refs\/tags\//}
           echo ::set-output name=GO_VERSION::${GO_VERSION}
         shell: bash
         env:
@@ -136,7 +135,7 @@ jobs:
       - name: Get versions
         id: get_version
         run: |
-          SFTPGO_VERSION=${GITHUB_REF#refs/*/}
+          SFTPGO_VERSION=${GITHUB_REF/refs\/tags\//}
           PKG_VERSION=${SFTPGO_VERSION:1}
           echo ::set-output name=SFTPGO_VERSION::${SFTPGO_VERSION}
           echo "::set-output name=PKG_VERSION::${PKG_VERSION}"
