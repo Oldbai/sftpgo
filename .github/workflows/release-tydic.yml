@@ -104,10 +104,10 @@ jobs:
         id: build_linux_pkgs
         run: |
           export NFPM_ARCH=${{ matrix.go-arch }}
+          PKG_VERSION=${SFTPGO_VERSION:1}
           export SFTPGO_VERSION=${SFTPGO_VERSION:1}
           cd pkgs
           ./build.sh
-          PKG_VERSION=${SFTPGO_VERSION:1}
           echo "::set-output name=pkg-version::${PKG_VERSION}"
         env:
           SFTPGO_VERSION: ${{ steps.get_version.outputs.SFTPGO_VERSION }}
