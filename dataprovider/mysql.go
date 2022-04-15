@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/drakkan/sftpgo/v2/util"
 	"strings"
 	"time"
 
@@ -121,6 +122,10 @@ func initializeMySQLProvider() error {
 		}
 		dbHandle.SetConnMaxLifetime(240 * time.Second)
 		provider = &MySQLProvider{dbHandle: dbHandle}
+		//初始化mysql用户缓存
+		if util.IsStringInSlice(MySQLDataProviderName, config.Cache.Users.EnableDriver) {
+			InitializeSharedDBUserCache(config.Cache.Users.MaxSize)
+		}
 	} else {
 		providerLog(logger.LevelError, "error creating mysql database handler, connection string: %#v, error: %v",
 			getMySQLConnectionString(true), err)
@@ -179,18 +184,52 @@ func (p *MySQLProvider) updateAdminLastLogin(username string) error {
 }
 
 func (p *MySQLProvider) userExists(username string) (User, error) {
+	if util.IsStringInSlice(MySQLDataProviderName, config.Cache.Users.EnableDriver) {
+		return p.getAndRefreshCacheUser(username)
+	}
 	return sqlCommonGetUserByUsername(username, p.dbHandle)
 }
 
+func (p *MySQLProvider) getAndRefreshCacheUser(username string) (User, error) {
+	cachedUser, ok := GetCachedSharedDBUser(username)
+	if ok && !cachedUser.IsExpired() {
+		return cachedUser.User, nil
+	}
+	user, err := sqlCommonGetUserByUsername(username, p.dbHandle)
+	if err != nil {
+		return user, err
+	}
+	cachedUser = &CachedUser{
+		User: user,
+	}
+	if config.Cache.Users.ExpirationTime > 0 {
+		cachedUser.Expiration = time.Now().Add(time.Duration(config.Cache.Users.ExpirationTime) * time.Minute)
+	}
+	CacheSharedDBUser(cachedUser)
+	return cachedUser.User, err
+}
+
 func (p *MySQLProvider) addUser(user *User) error {
+	if util.IsStringInSlice(MySQLDataProviderName, config.Cache.Users.EnableDriver) {
+		RemoveCachedSharedDBUser(user.Username)
+	}
 	return sqlCommonAddUser(user, p.dbHandle)
 }
 
 func (p *MySQLProvider) updateUser(user *User) error {
+	if util.IsStringInSlice(MySQLDataProviderName, config.Cache.Users.EnableDriver) {
+		if err := sqlCommonUpdateUser(user, p.dbHandle); err != nil {
+			return err
+		}
+		RemoveCachedSharedDBUser(user.Username)
+	}
 	return sqlCommonUpdateUser(user, p.dbHandle)
 }
 
 func (p *MySQLProvider) deleteUser(user *User) error {
+	if util.IsStringInSlice(MySQLDataProviderName, config.Cache.Users.EnableDriver) {
+		RemoveCachedSharedDBUser(user.Username)
+	}
 	return sqlCommonDeleteUser(user, p.dbHandle)
 }
 

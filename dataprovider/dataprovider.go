@@ -372,6 +372,20 @@ type Config struct {
 	// based on the "updated_at" field, and updates its internal caches if users are updated from
 	// a different instance. This check, if enabled, is executed every 10 minutes
 	IsShared int `json:"is_shared" mapstructure:"is_shared"`
+	// Cache configuration
+	Cache Cache `json:"cache" mapstructure:"cache"`
+}
+
+// UsersCacheConfig defines the cache configuration for users
+type UsersCacheConfig struct {
+	EnableDriver   []string `json:"enable_driver" mapstructure:"enable_driver"` // Valid values are add, update, delete. Empty slice to disable
+	ExpirationTime int      `json:"expiration_time" mapstructure:"expiration_time"`
+	MaxSize        int      `json:"max_size" mapstructure:"max_size"`
+}
+
+// Cache configuration
+type Cache struct {
+	Users UsersCacheConfig `json:"users" mapstructure:"users"`
 }
 
 // IsDefenderSupported returns true if the configured provider supports the defender

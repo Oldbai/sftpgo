@@ -11,11 +11,15 @@ import (
 )
 
 var (
-	webDAVUsersCache *usersCache
+	webDAVUsersCache  *usersCache
+	shareDBUsersCache *usersCache
 )
 
 func init() {
 	webDAVUsersCache = &usersCache{
+		users: map[string]CachedUser{},
+	}
+	shareDBUsersCache = &usersCache{
 		users: map[string]CachedUser{},
 	}
 }
@@ -23,6 +27,12 @@ func init() {
 // InitializeWebDAVUserCache initializes the cache for webdav users
 func InitializeWebDAVUserCache(maxSize int) {
 	webDAVUsersCache = &usersCache{
+		users:   map[string]CachedUser{},
+		maxSize: maxSize,
+	}
+}
+func InitializeSharedDBUserCache(maxSize int) {
+	shareDBUsersCache = &usersCache{
 		users:   map[string]CachedUser{},
 		maxSize: maxSize,
 	}
@@ -146,4 +156,19 @@ func GetCachedWebDAVUser(username string) (*CachedUser, bool) {
 // RemoveCachedWebDAVUser removes a cached WebDAV user
 func RemoveCachedWebDAVUser(username string) {
 	webDAVUsersCache.remove(username)
+}
+
+// CacheSharedDBUser 添加共享数据源用户缓存
+func CacheSharedDBUser(cachedUser *CachedUser) {
+	shareDBUsersCache.add(cachedUser)
+}
+
+// GetCachedSharedDBUser 返回共享数据源用户缓存
+func GetCachedSharedDBUser(username string) (*CachedUser, bool) {
+	return shareDBUsersCache.get(username)
+}
+
+// RemoveCachedSharedDBUser 删除共享数据源用户缓存
+func RemoveCachedSharedDBUser(username string) {
+	shareDBUsersCache.remove(username)
 }

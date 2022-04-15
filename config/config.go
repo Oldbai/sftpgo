@@ -273,6 +273,13 @@ func Init() {
 			DelayedQuotaUpdate:        0,
 			CreateDefaultAdmin:        false,
 			IsShared:                  0,
+			Cache: dataprovider.Cache{
+				Users: dataprovider.UsersCacheConfig{
+					EnableDriver:   []string{},
+					ExpirationTime: 0,
+					MaxSize:        50,
+				},
+			},
 		},
 		HTTPDConfig: httpd.Conf{
 			Bindings:           []httpd.Binding{defaultHTTPDBinding},
